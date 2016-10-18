@@ -13,7 +13,7 @@ Vagrant.configure(2) do |config|
 
     config.vm.provision "file", source: "/home/slberger/.ssh/github_enterprise", destination: "/home/vagrant/.ssh/id_rsa"
     config.vm.provision "file", source: "/home/slberger/.ssh/github_enterprise.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
-    config.vm.provision "shell", privileged: true, path: "install.sh"
+    config.vm.provision "shell", privileged: false, path: "install.sh"
 
     config.vm.provider :virtualbox do |vb|
       vb.memory = 4096

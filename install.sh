@@ -1,17 +1,18 @@
 #!/bin/bash
 set -ex
 
-WORKING_DIR="/opt/vagrant"
+WORKING_DIR="/home/vagrant"
 REPOS=(mock-encryption-agent agent-api-service encryption-rules-engine encryption_persistence encryption-inventory encryption-inventory-client encryption-rules-service-api encryption-service-ui common)
 
 machine_setup() {
-    apt-get update -y
-    apt-get upgrade -y
-    apt-get install git -y
+    sudo apt-get update -y
+    sudo apt-get upgrade -y
+    sudo apt-get install git -y
 
     git config --global user.email "slberger@us.ibm.com"
     git config --global user.name "Shawn L. Berger"
-    cp /home/vagrant/.ssh/{id_rsa,id_rsa.pub} /root/.ssh/
+    sudo cp /home/vagrant/.ssh/{id_rsa,id_rsa.pub} /root/.ssh/
+    sudo sh -c 'ssh-keyscan -H github.ibm.com >> /root/.ssh/known_hosts'
 }
 
 clone_repos() {
@@ -25,23 +26,46 @@ clone_repos() {
 install_go() {
     cd ${WORKING_DIR}
     wget https://storage.googleapis.com/golang/go1.7.1.linux-amd64.tar.gz
-    tar -C /usr/local -xzf go1.7.1.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xzf go1.7.1.linux-amd64.tar.gz
 
     mkdir ${WORKING_DIR}/goworkspace
 
     export PATH=${PATH}:/usr/local/go/bin
-    echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+    sudo sh -c "echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile"
     export GOPATH=${WORKING_DIR}/goworkspace
-    echo 'export GOPATH=${WORKING_DIR}/goworkspace' >> /etc/profile
+    sudo sh -c "echo 'export GOPATH=${WORKING_DIR}/goworkspace' >> /etc/profile"
     export PATH=${PATH}:${GOPATH}/bin
-    echo 'export PATH=$PATH:$GOPATH/bin' >> /etc/profile
+    sudo sh -c "echo 'export PATH=$PATH:$GOPATH/bin' >> /etc/profile"
 
     mkdir -p $GOPATH/src/github.ibm.com/Alchemy-Key-Protect
 }
 
+install_docker() {
+    # install docker
+    sudo apt-get install apt-transport-https ca-certificates -y
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+
+    sudo touch /etc/apt/sources.list.d/docker.list
+    sudo sh -c "echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' >> /etc/apt/sources.list.d/docker.list"
+
+    sudo apt-get update -y
+    sudo apt-get purge lxc-docker -y
+
+    sudo apt-get install linux-image-extra-$(uname -r) linux-image-extra-virtual -y
+
+    sudo apt-get install docker-engine -y
+
+    # allow vagrant user to run docker
+    sudo usermod -aG docker $USER
+
+    # install docker-compose
+    sudo sh -c "curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose"
+    sudo chmod +x /usr/local/bin/docker-compose
+}
+
 install_glide() {
-    add-apt-repository ppa:masterminds/glide -y && apt-get update -y
-    apt-get install glide -y
+    sudo add-apt-repository ppa:masterminds/glide -y && sudo apt-get update -y
+    sudo apt-get install glide -y
 }
 
 install_nats() {
@@ -50,7 +74,7 @@ install_nats() {
 }
 
 install_protocol_buffers() {
-    apt-get install autoconf automake libtool curl make g++ unzip -y
+    sudo apt-get install autoconf automake libtool curl make g++ unzip -y
 
     git clone https://github.com/google/protobuf.git ${WORKING_DIR}/protobuf
     cd ${WORKING_DIR}/protobuf
@@ -61,12 +85,12 @@ install_protocol_buffers() {
     ./configure
     make
     make check
-    make install
-    ldconfig
+    sudo make install
+    sudo ldconfig
 }
 
 install_grpc() {
-    apt-get install build-essential autoconf libtool
+    sudo apt-get install build-essential autoconf libtool -y
 
     go get google.golang.org/grpc
 
@@ -75,16 +99,29 @@ install_grpc() {
     git submodule update --init
 
     make
-    make install
+    sudo make install
+}
+
+install_prerequisites() {
+    install_go
+
+    install_docker
+
+    install_glide
+
+    install_nats
+
+    install_protocol_buffers
+
+    install_grpc
 }
 
 mock-encryption-agent() {
-    cd ${WORKING_DIR}/mock-encryption-agent
+    cd ${WORKING_DIR}/mock-encryption-agent/src
     make
 }
 
 agent-api-service() {
-    cp -R ${WORKING_DIR}/agent-api-service ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/
     cd ${GOPATH}/src/github.ibm.com/AlchemyKeyProtect/agent-api-service
     git checkout -b dev origin/dev
     glide install
@@ -135,17 +172,9 @@ main() {
 
     clone_repos ${WORKING_DIR}
 
-    install_go
+    install_prerequisites
 
-    install_glide
-
-    install_nats
-
-    install_protocol_buffers
-
-    install_grpc
-
-    clone_repos ${GOPATH}/src/Alchemy-Key-Protect
+    clone_repos ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect
 
     mock-encryption-agent
 
