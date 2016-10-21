@@ -12,6 +12,7 @@ machine_setup() {
     git config --global user.email "slberger@us.ibm.com"
     git config --global user.name "Shawn L. Berger"
     sudo cp /home/vagrant/.ssh/{id_rsa,id_rsa.pub} /root/.ssh/
+    sudo sh -c 'ssh-keyscan -H github.ibm.com >> /home/vagrant/.ssh/known_hosts'
     sudo sh -c 'ssh-keyscan -H github.ibm.com >> /root/.ssh/known_hosts'
 }
 
@@ -117,17 +118,18 @@ install_prerequisites() {
 }
 
 mock-encryption-agent() {
+    sudo apt-get install build-essential libgflags-dev pkg-config -y
     cd ${WORKING_DIR}/mock-encryption-agent/src
     make
 }
 
 agent-api-service() {
-    cd ${GOPATH}/src/github.ibm.com/AlchemyKeyProtect/agent-api-service
-    git checkout -b dev origin/dev
+    cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/agent-api-service
+    sed -i 's/1f5e250e1174502017917628cc48b52fdc25b531/8d1157a435470616f975ff9bb013bea8d0962067/' glide.lock
     glide install
-    docker-compose -f compose-develop.yml up
+    # sudo docker-compose -f compose-develop.yml up -d
     go install
-    agent-api-service
+    agent-api-service &
 }
 
 encryption-rules-engine() {
@@ -135,12 +137,11 @@ encryption-rules-engine() {
     go install github.com/xordataexchange/crypt/bin/crypt
 
     cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/encryption-rules-engine
-    git checkout -b develop origin/develop
     glide install
-    docker-compose -f compose-develop.yml up
+    sudo docker-compose -f compose-develop.yml up -d
     crypt set -backend="consul" -endpoint="127.0.0.1:8500" -plaintext /ers.engine/configuration/v1/development.json ./config/development.json
     go install
-    encryption-rules-engine
+    encryption-rules-engine &
 }
 
 # encryption_persistence() {
@@ -178,9 +179,9 @@ main() {
 
     mock-encryption-agent
 
-    agent-api-service
-
     encryption-rules-engine
+
+    agent-api-service
 
     # encryption_persistence
     #
