@@ -125,7 +125,7 @@ mock-encryption-agent() {
 
 agent-api-service() {
     cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/agent-api-service
-    sed -i 's/1f5e250e1174502017917628cc48b52fdc25b531/8d1157a435470616f975ff9bb013bea8d0962067/' glide.lock
+    # sed -i 's/1f5e250e1174502017917628cc48b52fdc25b531/8d1157a435470616f975ff9bb013bea8d0962067/' glide.lock
     glide install
     # sudo docker-compose -f compose-develop.yml up -d
     go install
@@ -144,9 +144,13 @@ encryption-rules-engine() {
     encryption-rules-engine &
 }
 
-# encryption_persistence() {
-#
-# }
+encryption_persistence() {
+    cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/encryption_persistence
+    glide install
+    sudo docker-compose -f docker-compose-develop.yml up -d
+
+    # go run cmd/persistence_service/main.go &
+}
 #
 # encryption-inventory() {
 #
