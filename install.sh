@@ -70,7 +70,9 @@ install_glide() {
 }
 
 install_nats() {
+    # nats client
     go get github.com/nats-io/nats
+    # nats server
     go get github.com/nats-io/gnatsd
 }
 
@@ -103,6 +105,24 @@ install_grpc() {
     sudo make install
 }
 
+install_cassandra() {
+    # cassandra is being installed so that you can query the cassandra db
+    #  without having to run commands in the docker container
+    cd ${WORKING_DIR}
+
+    # install java 8 in order to install cassandra
+    sudo add-apt-repository ppa:webupd8team/java -y
+    sudo apt-get update -y
+    sudo apt-get install oracle-java8-set-default -y
+
+    echo "deb http://www.apache.org/dist/cassandra/debian 36x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+    curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
+    sudo apt-get update -y
+
+    sudo apt-get install cassandra -y
+    service cassandra stop
+}
+
 install_prerequisites() {
     install_go
 
@@ -115,6 +135,8 @@ install_prerequisites() {
     install_protocol_buffers
 
     install_grpc
+
+    install_cassandra
 }
 
 mock-encryption-agent() {
@@ -129,7 +151,7 @@ agent-api-service() {
     glide install
     # sudo docker-compose -f compose-develop.yml up -d
     go install
-    agent-api-service &
+    # agent-api-service &
 }
 
 encryption-rules-engine() {
@@ -141,7 +163,7 @@ encryption-rules-engine() {
     sudo docker-compose -f compose-develop.yml up -d
     crypt set -backend="consul" -endpoint="127.0.0.1:8500" -plaintext /ers.engine/configuration/v1/development.json ./config/development.json
     go install
-    encryption-rules-engine &
+    # encryption-rules-engine &
 }
 
 encryption_persistence() {
@@ -187,7 +209,7 @@ main() {
 
     agent-api-service
 
-    # encryption_persistence
+    encryption_persistence
     #
     # encryption-inventory
     #
