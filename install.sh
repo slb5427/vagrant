@@ -2,7 +2,15 @@
 set -ex
 
 WORKING_DIR="/home/vagrant"
-REPOS=(mock-encryption-agent agent-api-service encryption-rules-engine encryption_persistence encryption-inventory encryption-inventory-client encryption-rules-service-api encryption-service-ui common)
+REPOS=(mock-encryption-agent \
+       agent-api-service \
+       encryption-rules-engine \
+       encryption_persistence \
+       encryption-inventory \
+       encryption-inventory-client \
+       encryption-rules-service-api \
+       encryption-service-ui \
+       common)
 
 machine_setup() {
     sudo apt-get update -y
@@ -136,7 +144,7 @@ install_prerequisites() {
 
     install_grpc
 
-    install_cassandra
+    # install_cassandra
 }
 
 mock-encryption-agent() {

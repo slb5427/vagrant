@@ -10,6 +10,7 @@ Vagrant.configure(2) do |config|
     config.vm.hostname = vm_name
     config.ssh.username = "vagrant"
     config.ssh.password = "vagrant"
+    config.vm.synced_folder "/home/slberger/vagrant", "/home/vagrant", create: true
 
     config.vm.provision "file", source: "/home/slberger/.ssh/github_enterprise", destination: "/home/vagrant/.ssh/id_rsa"
     config.vm.provision "file", source: "/home/slberger/.ssh/github_enterprise.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
