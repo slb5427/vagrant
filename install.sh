@@ -37,7 +37,7 @@ install_go() {
     wget https://storage.googleapis.com/golang/go1.7.1.linux-amd64.tar.gz
     sudo tar -C /usr/local -xzf go1.7.1.linux-amd64.tar.gz
 
-    mkdir ${WORKING_DIR}/goworkspace
+    mkdir -p ${WORKING_DIR}/goworkspace
 
     export PATH=${PATH}:/usr/local/go/bin
     sudo sh -c "echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile"
@@ -205,19 +205,22 @@ encryption_persistence() {
 main() {
     machine_setup
 
-    clone_repos ${WORKING_DIR}
+    # clone_repos ${WORKING_DIR}
 
     install_prerequisites
 
-    clone_repos ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect
+    go get github.ibm.com/data-protect/mono
+    go get github.ibm.com/data-protect/go-logmet-client
 
-    mock-encryption-agent
+    # clone_repos ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect
 
-    encryption-rules-engine
-
-    agent-api-service
-
-    encryption_persistence
+    # mock-encryption-agent
+    #
+    # encryption-rules-engine
+    #
+    # agent-api-service
+    #
+    # encryption_persistence
     #
     # encryption-inventory
     #
