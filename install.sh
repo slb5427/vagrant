@@ -2,15 +2,6 @@
 set -ex
 
 WORKING_DIR="/home/vagrant"
-REPOS=(mock-encryption-agent \
-       agent-api-service \
-       encryption-rules-engine \
-       encryption_persistence \
-       encryption-inventory \
-       encryption-inventory-client \
-       encryption-rules-service-api \
-       encryption-service-ui \
-       common)
 
 machine_setup() {
     sudo apt-get update -y
@@ -22,14 +13,6 @@ machine_setup() {
     sudo cp /home/vagrant/.ssh/{id_rsa,id_rsa.pub} /root/.ssh/
     sudo sh -c 'ssh-keyscan -H github.ibm.com >> /home/vagrant/.ssh/known_hosts'
     sudo sh -c 'ssh-keyscan -H github.ibm.com >> /root/.ssh/known_hosts'
-}
-
-clone_repos() {
-    mkdir -p $1
-    cd $1
-    for repo in ${REPOS[@]}; do
-        git clone git@github.ibm.com:Alchemy-Key-Protect/${repo}.git
-    done
 }
 
 install_go() {
@@ -113,24 +96,6 @@ install_grpc() {
     sudo make install
 }
 
-install_cassandra() {
-    # cassandra is being installed so that you can query the cassandra db
-    #  without having to run commands in the docker container
-    cd ${WORKING_DIR}
-
-    # install java 8 in order to install cassandra
-    sudo add-apt-repository ppa:webupd8team/java -y
-    sudo apt-get update -y
-    sudo apt-get install oracle-java8-set-default -y
-
-    echo "deb http://www.apache.org/dist/cassandra/debian 36x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
-    curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
-    sudo apt-get update -y
-
-    sudo apt-get install cassandra -y
-    service cassandra stop
-}
-
 install_prerequisites() {
     install_go
 
@@ -143,94 +108,15 @@ install_prerequisites() {
     install_protocol_buffers
 
     install_grpc
-
-    # install_cassandra
 }
-
-mock-encryption-agent() {
-    sudo apt-get install build-essential libgflags-dev pkg-config -y
-    cd ${WORKING_DIR}/mock-encryption-agent/src
-    make
-}
-
-agent-api-service() {
-    cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/agent-api-service
-    # sed -i 's/1f5e250e1174502017917628cc48b52fdc25b531/8d1157a435470616f975ff9bb013bea8d0962067/' glide.lock
-    glide install
-    # sudo docker-compose -f compose-develop.yml up -d
-    go install
-    # agent-api-service &
-}
-
-encryption-rules-engine() {
-    go get github.com/xordataexchange/crypt/bin/crypt
-    go install github.com/xordataexchange/crypt/bin/crypt
-
-    cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/encryption-rules-engine
-    glide install
-    sudo docker-compose -f compose-develop.yml up -d
-    crypt set -backend="consul" -endpoint="127.0.0.1:8500" -plaintext /ers.engine/configuration/v1/development.json ./config/development.json
-    go install
-    # encryption-rules-engine &
-}
-
-encryption_persistence() {
-    cd ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect/encryption_persistence
-    glide install
-    sudo docker-compose -f docker-compose-develop.yml up -d
-
-    # go run cmd/persistence_service/main.go &
-}
-#
-# encryption-inventory() {
-#
-# }
-#
-# encryption-inventory-client() {
-#
-# }
-#
-# encryption-rules-service-api() {
-#
-# }
-#
-# encryption-service-ui() {
-#
-# }
-#
-# common() {
-#
-# }
 
 main() {
     machine_setup
-
-    # clone_repos ${WORKING_DIR}
 
     install_prerequisites
 
     go get github.ibm.com/data-protect/mono
     go get github.ibm.com/data-protect/go-logmet-client
-
-    # clone_repos ${GOPATH}/src/github.ibm.com/Alchemy-Key-Protect
-
-    # mock-encryption-agent
-    #
-    # encryption-rules-engine
-    #
-    # agent-api-service
-    #
-    # encryption_persistence
-    #
-    # encryption-inventory
-    #
-    # encryption-inventory-client
-    #
-    # encryption-rules-service-api
-    #
-    # encryption-service-ui
-    #
-    # common
 }
 
 main "$@"
