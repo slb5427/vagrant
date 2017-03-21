@@ -8,6 +8,8 @@ machine_setup() {
     sudo apt-get upgrade -y
     sudo apt-get install git -y
 
+    # Sets up key authentication using ssh key for GitHub Enterprise
+    # Copies it from local workstation, meant for git and go get
     git config --global user.email "slberger@us.ibm.com"
     git config --global user.name "Shawn L. Berger"
     sudo cp /home/vagrant/.ssh/{id_rsa,id_rsa.pub} /root/.ssh/
@@ -28,8 +30,6 @@ install_go() {
     sudo sh -c "echo 'export GOPATH=${WORKING_DIR}/goworkspace' >> /etc/profile"
     export PATH=${PATH}:${GOPATH}/bin
     sudo sh -c "echo 'export PATH=$PATH:$GOPATH/bin' >> /etc/profile"
-
-    mkdir -p $GOPATH/src/github.ibm.com/Alchemy-Key-Protect
 }
 
 install_docker() {
@@ -116,7 +116,6 @@ main() {
     install_prerequisites
 
     go get github.ibm.com/data-protect/mono
-    go get github.ibm.com/data-protect/go-logmet-client
 }
 
 main "$@"
