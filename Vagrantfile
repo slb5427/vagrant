@@ -9,10 +9,6 @@ Vagrant.configure(2) do |config|
     config.vm.box = "ubuntu/trusty64"
     config.vm.hostname = vm_name
 
-    # these might not be required
-    config.ssh.username = "vagrant"
-    config.ssh.password = "vagrant"
-
     config.vm.synced_folder "/home/slberger/vagrant", "/home/vagrant", create: true
 
     # exposes dataprotect-api port on the host machine

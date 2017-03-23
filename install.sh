@@ -2,6 +2,7 @@
 set -ex
 
 WORKING_DIR="/home/vagrant"
+MONO_REPO="github.ibm.com/data-protect/mono"
 
 machine_setup() {
     sudo apt-get update -y
@@ -70,9 +71,13 @@ install_nats() {
 install_protocol_buffers() {
     sudo apt-get install autoconf automake libtool curl make g++ unzip -y
 
-    git clone https://github.com/google/protobuf.git ${WORKING_DIR}/protobuf
+    if [[ ! -d ${WORKING_DIR}/protobuf ]]; then
+        git clone https://github.com/google/protobuf.git ${WORKING_DIR}/protobuf
+    fi
     cd ${WORKING_DIR}/protobuf
-    git checkout tags/v3.0.2 -b v3.0.2
+    if [[ ! `git branch --list v3.0.2` ]]; then
+        git checkout tags/v3.0.2 -b v3.0.2
+    fi
 
     ./autogen.sh
 
@@ -88,7 +93,9 @@ install_grpc() {
 
     go get google.golang.org/grpc
 
-    git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc ${WORKING_DIR}/grpc
+    if [[ ! -d ${WORKING_DIR}/grpc ]]; then
+        git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc ${WORKING_DIR}/grpc
+    fi
     cd ${WORKING_DIR}/grpc
     git submodule update --init
 
@@ -115,7 +122,9 @@ main() {
 
     install_prerequisites
 
-    go get github.ibm.com/data-protect/mono
+    if [[ ! -d ${WORKING_DIR}/goworkspace/src/${MONO_REPO} ]]; then
+        git clone ${MONO_REPO} ${WORKING_DIR}/goworkspace/src/${MONO_REPO}
+    fi
 }
 
 main "$@"
