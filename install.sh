@@ -2,7 +2,8 @@
 set -ex
 
 WORKING_DIR="/home/vagrant"
-MONO_REPO="github.ibm.com/data-protect/mono"
+GO_VERSION="1.10"
+DOCKER_COMPOSE_VERSION="1.8.0"
 
 machine_setup() {
     sudo apt-get update -y
@@ -20,17 +21,18 @@ machine_setup() {
 
 install_go() {
     cd ${WORKING_DIR}
-    wget https://storage.googleapis.com/golang/go1.7.1.linux-amd64.tar.gz
-    sudo tar -C /usr/local -xzf go1.7.1.linux-amd64.tar.gz
+
+    wget https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
 
     mkdir -p ${WORKING_DIR}/goworkspace
 
     export PATH=${PATH}:/usr/local/go/bin
-    sudo sh -c "echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile"
+    sudo sh -c "echo 'export PATH=\${PATH}:/usr/local/go/bin' >> /etc/profile"
     export GOPATH=${WORKING_DIR}/goworkspace
     sudo sh -c "echo 'export GOPATH=${WORKING_DIR}/goworkspace' >> /etc/profile"
     export PATH=${PATH}:${GOPATH}/bin
-    sudo sh -c "echo 'export PATH=$PATH:$GOPATH/bin' >> /etc/profile"
+    sudo sh -c "echo 'export PATH=\${PATH}:\${GOPATH}/bin' >> /etc/profile"
 }
 
 install_docker() {
@@ -44,15 +46,15 @@ install_docker() {
     sudo apt-get update -y
     sudo apt-get purge lxc-docker -y
 
-    sudo apt-get install linux-image-extra-$(uname -r) linux-image-extra-virtual -y
+    sudo apt-get install "linux-image-extra-$(uname -r)" linux-image-extra-virtual -y
 
     sudo apt-get install docker-engine -y
 
     # allow vagrant user to run docker
-    sudo usermod -aG docker $USER
+    sudo usermod -aG docker ${USER}
 
     # install docker-compose
-    sudo sh -c "curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose"
+    sudo sh -c "curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose"
     sudo chmod +x /usr/local/bin/docker-compose
 }
 
@@ -94,7 +96,7 @@ install_grpc() {
     go get google.golang.org/grpc
 
     if [[ ! -d ${WORKING_DIR}/grpc ]]; then
-        git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc ${WORKING_DIR}/grpc
+        git clone -b "$(curl -L http://grpc.io/release)" https://github.com/grpc/grpc ${WORKING_DIR}/grpc
     fi
     cd ${WORKING_DIR}/grpc
     git submodule update --init
@@ -103,18 +105,25 @@ install_grpc() {
     sudo make install
 }
 
+install_ginkgo() {
+    go get -u github.com/onsi/ginkgo/ginkgo
+    go get -u github.com/onsi/gomega/...
+}
+
 install_prerequisites() {
     install_go
 
     install_docker
 
-    install_glide
+    # install_glide
+    #
+    # install_nats
+    #
+    # install_protocol_buffers
+    #
+    # install_grpc
 
-    install_nats
-
-    install_protocol_buffers
-
-    install_grpc
+    install_ginkgo
 }
 
 main() {
@@ -122,9 +131,9 @@ main() {
 
     install_prerequisites
 
-    if [[ ! -d ${WORKING_DIR}/goworkspace/src/${MONO_REPO} ]]; then
-        git clone ${MONO_REPO} ${WORKING_DIR}/goworkspace/src/${MONO_REPO}
-    fi
+    # if [[ ! -d ${WORKING_DIR}/goworkspace/src/${MONO_REPO} ]]; then
+    #     git clone ${MONO_REPO} ${WORKING_DIR}/goworkspace/src/${MONO_REPO}
+    # fi
 }
 
 main "$@"
