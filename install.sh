@@ -110,6 +110,12 @@ install_ginkgo() {
     go get -u github.com/onsi/gomega/...
 }
 
+install_direnv() {
+    sudo apt-get install direnv
+
+    eval "$(direnv hook bash)" >> /home/vagrant/.bashrc
+}
+
 install_prerequisites() {
     install_go
 
@@ -124,6 +130,8 @@ install_prerequisites() {
     # install_grpc
 
     install_ginkgo
+
+    install_direnv
 }
 
 main() {
