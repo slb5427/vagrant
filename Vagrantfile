@@ -16,7 +16,8 @@ Vagrant.configure(2) do |config|
     config.ssh.username = "vagrant"
     config.ssh.password = "vagrant"
 
-    config.vm.synced_folder "/Users/slberger@us.ibm.com/vagrant", "/home/vagrant", create: true
+    config.vm.synced_folder "/Users/slberger@us.ibm.com/vagrant/goworkspace", "/home/vagrant/goworkspace", create: true
+    config.vm.synced_folder "/Users/slberger@us.ibm.com/storage-service-workspace", "/home/vagrant/storage-service-workspace", create: true
 
     # exposes dataprotect-api port on the host machine
     # config.vm.network "forwarded_port", guest: 8080, host: 8080
