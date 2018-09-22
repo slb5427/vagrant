@@ -19,6 +19,19 @@ machine_setup() {
     sudo sh -c 'ssh-keyscan -H github.ibm.com >> /root/.ssh/known_hosts'
 }
 
+configure_go_dev_env() {
+    cd ${WORKING_DIR}/go
+
+    git config --local user.email "slb5427@gmail.com"
+    git config --local http.cookiefile "/home/vagrant/.gitcookies"
+    git config --local alias.change "codereview change"
+    git config --local alias.gofmt "codereview gofmt"
+    git config --local alias.mail "codereview mail"
+    git config --local alias.pending "codereview pending"
+    git config --local alias.submit "codereview submit"
+    git config --local alias.sync "codereview sync"
+}
+
 install_go() {
     cd ${WORKING_DIR}
 
@@ -33,6 +46,9 @@ install_go() {
     sudo sh -c "echo 'export GOPATH=${WORKING_DIR}/goworkspace' >> /etc/profile"
     export PATH=${PATH}:${GOPATH}/bin
     sudo sh -c "echo 'export PATH=\${PATH}:\${GOPATH}/bin' >> /etc/profile"
+
+    # Install Go dep
+    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 }
 
 install_docker() {
@@ -41,7 +57,7 @@ install_docker() {
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
     sudo touch /etc/apt/sources.list.d/docker.list
-    sudo sh -c "echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' >> /etc/apt/sources.list.d/docker.list"
+    sudo sh -c "echo 'deb https://apt.dockerproject.org/repo ubuntu-xenial main' >> /etc/apt/sources.list.d/docker.list"
 
     sudo apt-get update -y
     sudo apt-get purge lxc-docker -y
@@ -58,12 +74,51 @@ install_docker() {
     sudo chmod +x /usr/local/bin/docker-compose
 }
 
+install_pip() {
+    sudo apt-get install -y python-pip
+}
+
+install_minikube() {
+    cd ${WORKING_DIR}
+    curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.25.2/minikube-linux-amd64
+    chmod +x minikube
+    sudo mv minikube /usr/local/bin/
+}
+
+install_cinder() {
+    cd ${WORKING_DIR}
+
+    sudo apt-get install -y lvm2 thin-provisioning-tools
+    sudo modprobe dm_thin_pool
+
+    sudo truncate --size=10G cinder-volumes.img
+    # Get next available loop device
+    LD=$(sudo losetup -f)
+    sudo losetup ${LD} cinder-volumes.img
+    sudo sfdisk ${LD} << EOF
+,,8e,,
+EOF
+    sudo pvcreate ${LD}
+    sudo vgcreate cinder-volumes ${LD}
+
+    # install cinder client
+    git clone https://github.com/openstack/python-cinderclient
+    cd python-cinderclient
+    sudo pip install -e .
+    sudo pip install python-brick-cinderclient-ext
+
+    cd ${WORKING_DIR}
+    git clone https://github.com/openstack/cinder
+}
+
 install_glide() {
+    # DEPRECATED
     sudo add-apt-repository ppa:masterminds/glide -y && sudo apt-get update -y
     sudo apt-get install glide -y
 }
 
 install_nats() {
+    # DEPRECATED
     # nats client
     go get github.com/nats-io/nats
     # nats server
@@ -77,6 +132,7 @@ install_protocol_buffers() {
         git clone https://github.com/google/protobuf.git ${WORKING_DIR}/protobuf
     fi
     cd ${WORKING_DIR}/protobuf
+    # probably need to change this to be a different version
     if [[ ! `git branch --list v3.0.2` ]]; then
         git checkout tags/v3.0.2 -b v3.0.2
     fi
@@ -110,28 +166,32 @@ install_ginkgo() {
     go get -u github.com/onsi/gomega/...
 }
 
+install_cryptsetup() {
+    sudo apt-get install -y cryptsetup libcryptsetup-dev
+}
+
 install_direnv() {
+    # cd ${WORKING_DIR}
+
+    # git clone https://github.com/direnv/direnv
+    # cd direnv
+    # make install
+
     sudo apt-get install direnv
 
-    eval "$(direnv hook bash)" >> /home/vagrant/.bashrc
+    echo "$(direnv hook bash)" >> /home/vagrant/.bashrc
 }
 
 install_prerequisites() {
     install_go
-
     install_docker
-
-    # install_glide
-    #
-    # install_nats
-    #
-    # install_protocol_buffers
-    #
-    # install_grpc
-
+    install_pip
+    install_protocol_buffers
+    install_grpc
     install_ginkgo
-
+    install_cryptsetup
     install_direnv
+    configure_go_dev_env
 }
 
 main() {
